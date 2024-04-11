@@ -326,8 +326,8 @@ class ClipWindowManager {
     
     fileprivate func createWindow() {
         windowCtr?.close()
-        let view = ClipView().environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
-        let window = ClipWindowController(rootView: AnyView(view))
+       
+        let window = ClipWindowController()
         windowCtr = window
         window.showWindow(nil)
         return
@@ -358,11 +358,21 @@ class ClipWindowManager {
     }
 }
 
+class ShowSearchBoxModel: ObservableObject {
+    @Published var showSearchBox: Bool = false
+}
 
 private class ClipWindowController: NSWindowController, NSWindowDelegate {
     var hotkeyMgr = EnterHotKeyManager()
     
-    init(rootView: AnyView) {
+    var eventMonitor: Any?
+    var showSearchBox: ShowSearchBoxModel
+    
+    init() {
+        let m = ShowSearchBoxModel()
+        showSearchBox = m
+        let rootView  = ClipSearchView(showSearchBoxModel: m).environment(\.managedObjectContext, PersistenceController.shared.container.viewContext)
+        
         let window = FloatingPanel(
             contentRect: .zero,
             backing: .buffered,
@@ -418,6 +428,32 @@ private class ClipWindowController: NSWindowController, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         hotkeyMgr.unregisterHotKey()
         ClipViewModel.shared.selectedItem = nil
+        tearDownKeyMonitoring()
+    }
+    
+    func windowDidBecomeKey(_ notification: Notification) {
+        setupKeyMonitoring()
+    }
+    
+    func windowDidResignKey(_ notification: Notification) {
+        tearDownKeyMonitoring()
+    }
+    
+    func setupKeyMonitoring() {
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            if event.characters == "?" {
+                self?.showSearchBox.showSearchBox = true
+            }
+            return event
+        }
+    }
+    
+    func tearDownKeyMonitoring() {
+        if let eventMonitor = eventMonitor {
+            self.showSearchBox.showSearchBox = false
+            NSEvent.removeMonitor(eventMonitor)
+            self.eventMonitor = nil
+        }
     }
 }
 

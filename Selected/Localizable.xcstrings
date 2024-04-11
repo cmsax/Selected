@@ -357,6 +357,16 @@
         }
       }
     },
+    "Search" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索"
+          }
+        }
+      }
+    },
     "Search URL" : {
       "localizations" : {
         "zh-Hans" : {

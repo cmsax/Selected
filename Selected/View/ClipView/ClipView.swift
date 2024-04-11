@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import PDFKit
+import AppKit
 
 struct ClipDataView: View {
     var data: ClipHistoryData
@@ -139,72 +140,121 @@ struct ClipView: View {
     @Environment(\.managedObjectContext) private var viewContext
     
     // 维护一个 FetchRequest 实例
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \ClipHistoryData.lastCopiedAt, ascending: false)],
-        animation: .default)
-    private var clips: FetchedResults<ClipHistoryData>
-    
+    var fetchRequest: FetchRequest<ClipHistoryData>
+    private var clips: FetchedResults<ClipHistoryData> { fetchRequest.wrappedValue }
     
     // 默认选择第一条，必须同时设置 List 和 NavigationLink 的 selection
     //    @State var selected : ClipData?
     @ObservedObject var viewModel = ClipViewModel.shared
     
+    @Binding var searchText: String // 假设这是从外部传入的绑定的搜索字符串
+
+    
+    init() {
+        _searchText = .constant("")
+        fetchRequest = FetchRequest<ClipHistoryData>(
+                    sortDescriptors: [NSSortDescriptor(keyPath: \ClipHistoryData.lastCopiedAt, ascending: false)],
+                    predicate: nil
+        )
+    }
+    
+    init(searchText: Binding<String>) {
+        _searchText = searchText
+        fetchRequest = FetchRequest<ClipHistoryData>(
+                    sortDescriptors: [NSSortDescriptor(keyPath: \ClipHistoryData.lastCopiedAt, ascending: false)],
+                    predicate: searchText.wrappedValue.isEmpty ? nil : NSPredicate(format: "plainText CONTAINS[cd] %@", searchText.wrappedValue)
+        )
+    }
+    
+    
     var body: some View {
         NavigationView{
-            List(clips, id: \.self, selection:  $viewModel.selectedItem){
-                clipData in
-                let item = clipData.getItems().first!
-                NavigationLink(destination: ClipDataView(data: clipData), tag: clipData, selection:  $viewModel.selectedItem) {
-                    let type = NSPasteboard.PasteboardType(item.type!)
-                    switch type {
-                        case .png:
-                            let im = NSImage(data: item.data!)!
-                            let height = valueFormatter.string(from: NSNumber(value: Double(im.size.height)))
-                            let width = valueFormatter.string(from: NSNumber(value: Double(im.size.width)))
-                            Label(
-                                title: { Text("Image \(width!) * \(height!)").padding(.leading, 10)},
-                                icon: {
-                                    Image(nsImage: NSImage(data: item.data!)!).resizable().aspectRatio(contentMode: .fit).frame(width: 20, height: 20)
-                                }
-                            )
-                        case .fileURL:
-                            let url = URL(string: String(decoding: item.data!, as: UTF8.self))!
-                            Label(
-                                title: { Text(url.lastPathComponent.removingPercentEncoding!).lineLimit(1).frame(alignment: .leading).padding(.leading, 10) },
-                                icon: { Image(systemName: "doc.on.doc").resizable().aspectRatio(contentMode: .fit).frame(width: 20, height: 20) }
-                            )
-                        case .rtf:
-                            Label(
-                                title: { Text(clipData.plainText!.trimmingCharacters(in: .whitespacesAndNewlines)).lineLimit(1).frame(alignment: .leading).padding(.leading, 10) },
-                                icon: { Image(systemName: "doc.richtext").resizable().aspectRatio(contentMode: .fit).frame(width: 20, height: 20) }
-                            )
-                        case .string:
-                            Label(
-                                title: { Text(clipData.plainText!.trimmingCharacters(in: .whitespacesAndNewlines)).lineLimit(1).frame(alignment: .leading).padding(.leading, 10) },
-                                icon: { Image(systemName: "doc.plaintext").resizable().aspectRatio(contentMode: .fit).frame(width: 20, height: 20) }
-                            )
-                        case .html:
-                            Label(
-                                title: { Text(clipData.plainText!.trimmingCharacters(in: .whitespacesAndNewlines)).lineLimit(1).frame(alignment: .leading).padding(.leading, 10) },
-                                icon: { Image(systemName: "circle.dashed.rectangle").resizable().aspectRatio(contentMode: .fit).frame(width: 20, height: 20) }
-                            )
-                        case .URL:
-                            Label(
-                                title: { Text(clipData.url!.trimmingCharacters(in: .whitespacesAndNewlines)).lineLimit(1).frame(alignment: .leading).padding(.leading, 10) },
-                                icon: { Image(systemName: "link").resizable().aspectRatio(contentMode: .fit).frame(width: 20, height: 20) }
-                            )
-                        default:
-                            EmptyView()
+            if !clips.isEmpty {
+                ScrollViewReader { scrollViewProxy in
+                    List(clips, id: \.self, selection: $viewModel.selectedItem){
+                        clipData in
+                        let item = clipData.getItems().first!
+                        NavigationLink(destination: ClipDataView(data: clipData), tag: clipData, selection:  $viewModel.selectedItem) {
+                            let type = NSPasteboard.PasteboardType(item.type!)
+                            switch type {
+                                case .png:
+                                    let im = NSImage(data: item.data!)!
+                                    let height = valueFormatter.string(from: NSNumber(value: Double(im.size.height)))
+                                    let width = valueFormatter.string(from: NSNumber(value: Double(im.size.width)))
+                                    Label(
+                                        title: { Text("Image \(width!) * \(height!)").padding(.leading, 10)},
+                                        icon: {
+                                            Image(nsImage: NSImage(data: item.data!)!).resizable().aspectRatio(contentMode: .fit).frame(width: 20, height: 20)
+                                        }
+                                    )
+                                case .fileURL:
+                                    let url = URL(string: String(decoding: item.data!, as: UTF8.self))!
+                                    Label(
+                                        title: { Text(url.lastPathComponent.removingPercentEncoding!).lineLimit(1).frame(alignment: .leading).padding(.leading, 10) },
+                                        icon: { Image(systemName: "doc.on.doc").resizable().aspectRatio(contentMode: .fit).frame(width: 20, height: 20) }
+                                    )
+                                case .rtf:
+                                    Label(
+                                        title: { Text(clipData.plainText!.trimmingCharacters(in: .whitespacesAndNewlines)).lineLimit(1).frame(alignment: .leading).padding(.leading, 10) },
+                                        icon: { Image(systemName: "doc.richtext").resizable().aspectRatio(contentMode: .fit).frame(width: 20, height: 20) }
+                                    )
+                                case .string:
+                                    Label(
+                                        title: { Text(clipData.plainText!.trimmingCharacters(in: .whitespacesAndNewlines)).lineLimit(1).frame(alignment: .leading).padding(.leading, 10) },
+                                        icon: { Image(systemName: "doc.plaintext").resizable().aspectRatio(contentMode: .fit).frame(width: 20, height: 20) }
+                                    )
+                                case .html:
+                                    Label(
+                                        title: { Text(clipData.plainText!.trimmingCharacters(in: .whitespacesAndNewlines)).lineLimit(1).frame(alignment: .leading).padding(.leading, 10) },
+                                        icon: { Image(systemName: "circle.dashed.rectangle").resizable().aspectRatio(contentMode: .fit).frame(width: 20, height: 20) }
+                                    )
+                                case .URL:
+                                    Label(
+                                        title: { Text(clipData.url!.trimmingCharacters(in: .whitespacesAndNewlines)).lineLimit(1).frame(alignment: .leading).padding(.leading, 10) },
+                                        icon: { Image(systemName: "link").resizable().aspectRatio(contentMode: .fit).frame(width: 20, height: 20) }
+                                    )
+                                default:
+                                    EmptyView()
+                            }
+                        }.frame(height: 30).focusable(true).id(clipData.id)
+                    }.frame(width: 250).frame(minWidth: 250, maxWidth: 250).onAppear(){
+                        ClipViewModel.shared.selectedItem = clips.first
+                    }.onChange(of: searchText) { _ in
+                        if let firstClipID = clips.first?.id {
+                            scrollViewProxy.scrollTo(firstClipID, anchor: .top)
+                        }
+                        DispatchQueue.main.async {
+                            ClipViewModel.shared.selectedItem = clips.first
+                        }
                     }
-                }.frame(height: 30)
-            }.frame(width: 250).frame(minWidth: 250, maxWidth: 250).onAppear(){
-                ClipViewModel.shared.selectedItem = clips.first
-            }
-            
-            if clips.isEmpty {
+                }
+            } else {
                 Text("Clipboard History")
             }
-        }.frame(width: 800, height: 400)
+        }.frame(width: 800, height: 400).focusSection()
+    }
+}
+
+struct ClipSearchView: View {
+    @State private var searchText: String = ""
+   
+    @StateObject var showSearchBoxModel: ShowSearchBoxModel
+    @FocusState private var isFocused
+    
+    var body: some View {
+        VStack{
+            if showSearchBoxModel.showSearchBox {
+                TextField("Search", text: $searchText).textFieldStyle(PlainTextFieldStyle())
+                    .padding().focused($isFocused)
+                    .onAppear {
+                        // 当搜索框显示时，使其获得焦点
+                        DispatchQueue.main.async {
+                            self.isFocused = true
+                        }
+                    }
+            }
+            ClipView(searchText: $searchText)
+        }
     }
 }
 
