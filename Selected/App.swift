@@ -46,7 +46,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                                                           object: nil)
     }
 
-    @objc func spaceDidChange() {
+    @MainActor @objc func spaceDidChange() {
         // 当空间改变时触发
         ClipWindowManager.shared.forceCloseWindow()
         ChatWindowManager.shared.closeAllWindows(.force)
@@ -117,9 +117,10 @@ struct SelectedApp: App {
 
 func requestAccessibilityPermissions() {
     // 判断权限
-    let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
-    let accessEnabled = AXIsProcessTrustedWithOptions(options)
 
+    //    let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
+    //    let accessEnabled = AXIsProcessTrustedWithOptions(options)
+    let accessEnabled = AXIsProcessTrusted()
     NSLog("accessEnabled: \(accessEnabled)")
 
     if !accessEnabled {
@@ -132,7 +133,7 @@ func requestAccessibilityPermissions() {
 let kExpandedLength: CGFloat = 100
 
 // 监听鼠标移动
-func monitorMouseMove() {
+@MainActor func monitorMouseMove() {
     var eventState = EventState()
     var hoverWorkItem: DispatchWorkItem?
     var lastSelectedText = ""
@@ -224,6 +225,7 @@ struct EventState {
     }
 }
 
+@MainActor
 let eventTypeMap: [ NSEvent.EventType: String] = [
     .mouseMoved: "mouseMoved",
     .keyDown: "keydonw",

@@ -9,7 +9,7 @@ import Defaults
 import SwiftUI
 import OpenAI
 
-public struct ChatContext {
+@MainActor public struct ChatContext {
     let text: String
     let webPageURL: String
     let bundleID: String
@@ -28,7 +28,7 @@ func isWord(str: String) -> Bool {
 struct Translation {
     let toLanguage: String
 
-    func translate(content: String, completion: @escaping (_: String) -> Void)  async -> Void{
+    func translate(content: String, completion: @escaping @Sendable (_: String) -> Void) async -> Void {
         if toLanguage == "cn" {
             await contentTrans2Chinese(content: content, completion: completion)
         } else if toLanguage == "en" {
@@ -46,7 +46,7 @@ struct Translation {
         return true
     }
 
-    private func contentTrans2Chinese(content: String, completion: @escaping (_: String) -> Void)  async -> Void{
+    private func contentTrans2Chinese(content: String, completion: @escaping @Sendable (_: String) -> Void)  async -> Void{
         switch Defaults[.aiService] {
             case "OpenAI":
                 if isWord(str: content) {
@@ -71,17 +71,19 @@ struct Translation {
         }
     }
 
-    private func contentTrans2English(content: String, completion: @escaping (_: String) -> Void)  async -> Void{
-        switch Defaults[.aiService] {
-            case "OpenAI":
-                await OpenAITrans2English.chatOne(selectedText: content, completion: completion)
-            case "Gemini":
-                await GeminiTrans2English.chatOne(selectedText: content, completion: completion)
-            case "Claude":
-                await ClaudeTrans2English.chatOne(selectedText: content, completion: completion)
-            default:
-                completion("no model \(Defaults[.aiService])")
-        }
+    private func contentTrans2English(content: String, completion: @escaping @Sendable (_: String) -> Void)  async{
+            switch Defaults[.aiService] {
+
+                case "OpenAI":
+                    await OpenAITrans2English.chatOne(selectedText: content, completion: completion)
+                case "Gemini":
+                    await GeminiTrans2English.chatOne(selectedText: content, completion: completion)
+                case "Claude":
+                    await ClaudeTrans2English.chatOne(selectedText: content, completion: completion)
+                default:
+                    completion("no model \(Defaults[.aiService])")
+            }
+
     }
 
     private func convert(index: Int, message: ResponseMessage)->Void {
@@ -89,7 +91,7 @@ struct Translation {
     }
 }
 
-struct ChatService: AIChatService{
+struct ChatService: AIChatService, @unchecked Sendable{
     var chatService: AIChatService
 
     init?(prompt: String, options: [String:String]){
@@ -153,7 +155,7 @@ public protocol AIChatService {
 }
 
 
-public class ResponseMessage: ObservableObject, Identifiable, Equatable{
+public class ResponseMessage: ObservableObject, Identifiable, Equatable, @unchecked Sendable{
     public static func == (lhs: ResponseMessage, rhs: ResponseMessage) -> Bool {
         lhs.id == rhs.id
     }
@@ -198,5 +200,7 @@ func systemPrompt() -> String{
                       \(currentLocation)
                       You are a tool running on macOS called Selected. You can help user do anything.
                       The system language is \(language), you should try to reply in \(language) as much as possible, unless the user specifies to use another language, such as specifying to translate into a certain language.
+                      
+                      Please provide clear and concise answers to the following questions. If your response includes any mathematical formulas, please format them using LaTeX and enclose the formulas within double dollar signs ($$). For example: $$E = mc^2$$.
                       """
 }

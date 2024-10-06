@@ -833,7 +833,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = io.kitool.Selected.dev;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -866,7 +866,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = io.kitool.Selected;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -1075,7 +1075,7 @@
 			repositoryURL = "https://github.com/groue/GRDB.swift";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 6.27.0;
+				minimumVersion = 6.29.3;
 			};
 		};
 		38AD8D882C19D2DB00EAFA5D /* XCRemoteSwiftPackageReference "DSWaveformImage" */ = {
@@ -1112,10 +1112,10 @@
 		};
 		38F5E29D2B9AB332002FEEFE /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui";
+			repositoryURL = "https://github.com/sakeven/swift-markdown-ui";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.3.0;
+				branch = new;
+				kind = branch;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

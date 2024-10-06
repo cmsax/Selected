@@ -65,7 +65,11 @@ class RunCommandAction: Decodable {
                     } else if generic.after == kAfterCopy {
                         copyText(output)
                     } else if generic.after == kAfterShow {
-                        WindowManager.shared.createTextWindow(output)
+                        Task {
+                            await MainActor.run {
+                                WindowManager.shared.createTextWindow(output)
+                            }
+                        }
                     }
                 }
             } catch {
@@ -86,6 +90,7 @@ func pasteText(_ text: String) {
 
     pasteboard.clearContents()
     pasteboard.setString(text, forType: .string)
+    usleep(100000)
     PressPasteKey()
     usleep(100000)
     pasteboard.setString(lastCopyText ?? "", forType: .string)
@@ -136,7 +141,7 @@ public func executeCommand(
                 stdOutPipe.fileHandleForReading.readabilityHandler = nil
                 group.leave()
             } else {
-                stdOutData.append(data)
+//                stdOutData.append(data)
             }
         }
 
@@ -148,7 +153,7 @@ public func executeCommand(
                 stdErrPipe.fileHandleForReading.readabilityHandler = nil
                 group.leave()
             } else {
-                stdErrData.append(data)
+//                stdErrData.append(data)
             }
         }
 

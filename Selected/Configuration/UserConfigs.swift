@@ -29,7 +29,7 @@ struct UserConfiguration: Codable {
 
 // ConfigurationManager 读取、保存应用的复杂配置，比如什么应用下启用哪些 action 等等。
 // 配置保存在 "Library/Application Support/Selected" 下。
-class ConfigurationManager {
+class ConfigurationManager: @unchecked Sendable {
     static let shared = ConfigurationManager()
     private let configurationFileName = "UserConfiguration.json"
     

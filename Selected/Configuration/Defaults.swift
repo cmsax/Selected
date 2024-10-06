@@ -60,7 +60,7 @@ extension AudioSpeechQuery.AudioSpeechVoice: Defaults.Serializable{}
 
 
 extension Shortcut: Defaults.Serializable{
-    public static let bridge = ShortcutBridge()
+    nonisolated(unsafe) public static let bridge = ShortcutBridge()
 }
 
 public struct ShortcutBridge: Defaults.Bridge {

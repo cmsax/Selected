@@ -18,7 +18,7 @@ struct Word: Codable, FetchableRecord, TableRecord {
     var exchange: String
 }
 
-class StarDict {
+class StarDict: @unchecked Sendable {
     static let shared = StarDict()
     var databaseFileURL: URL
     

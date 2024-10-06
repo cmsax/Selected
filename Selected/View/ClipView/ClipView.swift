@@ -126,7 +126,7 @@ func isValidHttpUrl(_ string: String) -> Bool {
 }
 
 
-class ClipViewModel: ObservableObject {
+class ClipViewModel: ObservableObject, @unchecked Sendable {
     static let shared = ClipViewModel()
     @Published var selectedItem: ClipHistoryData?
 }
@@ -146,13 +146,16 @@ struct ClipView: View {
     // 默认选择第一条，必须同时设置 List 和 NavigationLink 的 selection
     //    @State var selected : ClipData?
     @ObservedObject var viewModel = ClipViewModel.shared
-    
+
+    @FocusState private var isFocused: Bool
+
     var body: some View {
         NavigationView{
             if clips.isEmpty {
                 Text("Clipboard History").frame(width: 250)
             } else {
-                List(clips, id: \.self, selection:  $viewModel.selectedItem){
+                List(clips, id: \.self, selection:  $viewModel.selectedItem)
+                {
                     clipData in
                     let item = clipData.getItems().first!
                     NavigationLink(destination: ClipDataView(data: clipData), tag: clipData, selection:  $viewModel.selectedItem) {
@@ -208,7 +211,10 @@ struct ClipView: View {
                     }
                 }.frame(width: 250).frame(minWidth: 250, maxWidth: 250).onAppear(){
                     ClipViewModel.shared.selectedItem = clips.first
-                }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        self.isFocused = true
+                    }
+                }.focused($isFocused)
             }
         }.frame(width: 800, height: 400)
     }

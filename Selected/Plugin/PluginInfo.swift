@@ -116,7 +116,7 @@ struct Plugin: Decodable {
 
 
 // PluginManager 管理各种插件。插件保存在 ”Library/Application Support/Selected/Extensions“。
-class PluginManager: ObservableObject {
+class PluginManager: ObservableObject, @unchecked Sendable {
     private var extensionsDir: URL
     private let filemgr = FileManager.default
     
@@ -238,7 +238,7 @@ class PluginManager: ObservableObject {
         self.plugins = list
     }
     
-    var allActions: [PerformAction] {
+    @MainActor var allActions: [PerformAction] {
         var list = [PerformAction]()
         list.append(WebSearchAction().generate(
             generic: GenericAction(title: "Search", icon: "symbol:magnifyingglass", after: "", identifier: "selected.websearch")

@@ -35,14 +35,14 @@ struct SharingsPicker: NSViewRepresentable {
         Coordinator(owner: self)
     }
     
-    class Coordinator: NSObject, NSSharingServicePickerDelegate {
+    class Coordinator: NSObject, @preconcurrency NSSharingServicePickerDelegate {
         let owner: SharingsPicker
         
         init(owner: SharingsPicker) {
             self.owner = owner
         }
         
-        func sharingServicePicker(_ sharingServicePicker: NSSharingServicePicker, didChoose service: NSSharingService?) {
+        @MainActor func sharingServicePicker(_ sharingServicePicker: NSSharingServicePicker, didChoose service: NSSharingService?) {
             sharingServicePicker.delegate = nil   // << cleanup
             self.owner.isPresented = false        // << dismiss
             showingSharingPicker = false
@@ -51,7 +51,7 @@ struct SharingsPicker: NSViewRepresentable {
 }
 
 // When in showing SharingPicker, we should avoid close popbar window by accident.
-var showingSharingPicker = false
+@MainActor var showingSharingPicker = false
 
 struct SharingButton: View {
     @State private var showPicker = false

@@ -9,6 +9,7 @@ import Foundation
 import SwiftUI
 import MarkdownUI
 
+
 struct TranslationView: View {
     var text: String
     @State var transText: String = "..."
@@ -57,14 +58,20 @@ struct TranslationView: View {
                         if isWord(str: text) {
                             word = try! StarDict.shared.query(word: text)
                         }
+
                         await Translation(toLanguage: to).translate(content: text) { content in
-                            if !hasRep {
-                                transText = content
-                                hasRep = true
-                            } else {
-                                transText = transText + content
+                            Task{
+                                await   MainActor.run {
+                                    if !hasRep {
+                                        transText = content
+                                        hasRep = true
+                                    } else {
+                                        transText = transText + content
+                                    }
+                                }
                             }
                         }
+                        
                     }
             }.frame(width: 550, height: 300)
             Divider()

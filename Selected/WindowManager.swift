@@ -31,23 +31,23 @@ func createTemporaryURLForData(_ data: Data, fileName: String) -> URL? {
 }
 
 
-class WindowManager {
+class WindowManager: @unchecked Sendable {
     static let shared =  WindowManager()
 
     // TODO: lock
     private var windowCtr: WindowController?
 
-    func createPopBarWindow(_ ctx: SelectedTextContext) {
+    @MainActor func createPopBarWindow(_ ctx: SelectedTextContext) {
         let contentView = PopBarView(actions: GetActions(ctx: ctx), ctx: ctx)
         createWindow(rootView: AnyView(contentView), windType: .Transparent)
     }
 
-    func createTranslationWindow(withText text: String, to: String) {
+    @MainActor func createTranslationWindow(withText text: String, to: String) {
         let contentView = TranslationView(text: text, to: to)
         createWindow(rootView: AnyView(contentView), windType: .Alpha)
     }
 
-    func createAudioPlayerWindow(_ audio: Data) {
+    @MainActor func createAudioPlayerWindow(_ audio: Data) {
         guard let url = createTemporaryURLForData(audio, fileName: "selected-tmptts.mp3") else{
             return
         }
@@ -63,7 +63,7 @@ class WindowManager {
     }
 
 
-    func closeOnlyPopbarWindows(_ mode: CloseWindowMode) -> Bool {
+    @MainActor func closeOnlyPopbarWindows(_ mode: CloseWindowMode) -> Bool {
         guard let windowCtr = windowCtr else {
             return false
         }
@@ -76,7 +76,7 @@ class WindowManager {
         return false
     }
 
-    func closeAllWindows(_ mode: CloseWindowMode) -> Bool {
+    @MainActor func closeAllWindows(_ mode: CloseWindowMode) -> Bool {
         guard let windowCtr = windowCtr else {
             return false
         }
@@ -86,7 +86,7 @@ class WindowManager {
         return closeWindow(mode, windowCtr: windowCtr)
     }
 
-    private func createWindow(rootView: AnyView, windType: WindowType) {
+    @MainActor private func createWindow(rootView: AnyView, windType: WindowType) {
         // 使用任意视图创建 WindowController
         let windowController = WindowController(rootView: rootView, windType: windType)
         windowCtr?.close()
@@ -99,7 +99,7 @@ class WindowManager {
         }
     }
 
-    private func createWindow(rootView: AnyView, windType: WindowType, onClose: @escaping ()->Void) {
+    @MainActor private func createWindow(rootView: AnyView, windType: WindowType, onClose: @Sendable @escaping ()->Void) {
         // 使用任意视图创建 WindowController
         let windowController = WindowController(rootView: rootView, windType: windType)
         windowController.onClose = onClose
@@ -113,7 +113,7 @@ class WindowManager {
         }
     }
 
-    func createTextWindow(_ text: String) {
+    @MainActor func createTextWindow(_ text: String) {
         // 使用任意视图创建 WindowController
         let windowController = WindowController(text: text)
         windowCtr?.close()
@@ -126,7 +126,7 @@ class WindowManager {
         }
     }
 
-    private func closeWindow(_ mode: CloseWindowMode, windowCtr: WindowController) -> Bool {
+    @MainActor private func closeWindow(_ mode: CloseWindowMode, windowCtr: WindowController) -> Bool {
         var closed = false
         switch mode {
             case .expanded:
@@ -163,9 +163,9 @@ enum WindowType {
     case Transparent, Alpha, Opaque
 }
 
-private class WindowController: NSWindowController, NSWindowDelegate {
+private class WindowController: NSWindowController, NSWindowDelegate, @unchecked Sendable {
     var resultWindow: Bool
-    var onClose: (()->Void)?
+    var onClose: (@Sendable ()->Void)?
 
     init(text: String) {
         let window = TextResultWindow(text)
@@ -191,6 +191,8 @@ private class WindowController: NSWindowController, NSWindowDelegate {
         // 必须用 NSPanel 并设置 .nonactivatingPanel 以及 level 为 .screenSaver
         // 保证悬浮在全屏应用之上
         let key = windType == .Alpha
+
+        NSLog("key \(key)")
         window = FloatingPanel(
             contentRect: .zero,
             backing: .buffered,
@@ -259,10 +261,14 @@ private class WindowController: NSWindowController, NSWindowDelegate {
     }
 
     deinit{
-        stopSpeak()
-        if let onClose = onClose {
-            onClose()
+        Task { @MainActor in
+            stopSpeak()
+
         }
+
+        if let onClose = onClose {
+                onClose()
+            }
     }
 
     required init?(coder: NSCoder) {
@@ -279,7 +285,7 @@ private class WindowController: NSWindowController, NSWindowDelegate {
 }
 
 
-func TextResultWindow(_ text: String) -> NSWindow{
+@MainActor func TextResultWindow(_ text: String) -> NSWindow{
     let window = FloatingPanel(
         contentRect: .zero,
         backing: .buffered,

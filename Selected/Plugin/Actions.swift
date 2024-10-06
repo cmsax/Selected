@@ -138,17 +138,15 @@ class OpenLinksAction: Decodable {
 
 
 class WebSearchAction {
-    @Default(.search) var searchURL
-    
     init() {
     }
-    
-    func generate(generic: GenericAction) -> PerformAction {
-        
+
+
+    @MainActor func generate(generic: GenericAction) -> PerformAction {
         return PerformAction(
             actionMeta: generic, complete: { ctx in
-                
-                let urlString = replaceOptions(content: self.searchURL, selectedText: ctx.Text)
+                let searchURL = Defaults[.search]
+                let urlString = replaceOptions(content: searchURL, selectedText: ctx.Text)
                 
                 let url = URL(string: urlString)!
                 
@@ -293,7 +291,7 @@ class TranslationAction: Decodable {
     func generate(generic: GenericAction) -> PerformAction {
         return PerformAction(actionMeta:
                                 generic, complete: { ctx in
-            WindowManager.shared.createTranslationWindow(withText: ctx.Text, to: self.target)
+            await WindowManager.shared.createTranslationWindow(withText: ctx.Text, to: self.target)
         })
     }
 }
@@ -309,7 +307,7 @@ struct Action: Decodable{
 }
 
 
-class PerformAction: Identifiable,Hashable {
+class PerformAction: Identifiable,Hashable, @unchecked Sendable {
     var id = UUID()
     var actionMeta: GenericAction
     var pluginInfo: PluginInfo?
@@ -348,12 +346,12 @@ class PerformAction: Identifiable,Hashable {
     }
 }
 
-func GetAllActions() -> [PerformAction] {
+@MainActor func GetAllActions() -> [PerformAction] {
     return PluginManager.shared.allActions
 }
 
 // GetActions 根据上下文获得当前支持的 action 列表。比如根据当前窗口的应用选择 action 列表。
-func GetActions(ctx: SelectedTextContext) -> [PerformAction] {
+@MainActor func GetActions(ctx: SelectedTextContext) -> [PerformAction] {
     var actions = [ActionID]()
     if let condition = ConfigurationManager.shared.getAppCondition(bundleID: ctx.BundleID) {
         actions = condition.actions

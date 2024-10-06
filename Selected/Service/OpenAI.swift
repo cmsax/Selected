@@ -55,7 +55,7 @@ struct FunctionDefinition: Codable, Equatable{
     }
 }
 
-let dalle3Def = ChatQuery.ChatCompletionToolParam.FunctionDefinition(
+nonisolated(unsafe) let dalle3Def = ChatQuery.ChatCompletionToolParam.FunctionDefinition(
     name: "Dall-E-3",
     description: "When user asks for a picture, create a prompt that dalle can use to generate the image. The prompt must be in English. Translate to English if needed. The url of the image will be returned.",
     parameters: .init(type: .object, properties:[
@@ -69,7 +69,7 @@ typealias OpenAIChatCompletionMessageToolCallParam = ChatQuery.ChatCompletionMes
 typealias FunctionParameters = ChatQuery.ChatCompletionToolParam.FunctionDefinition.FunctionParameters
 
 
-struct OpenAIPrompt {
+struct OpenAIPrompt: @unchecked Sendable {
     let prompt: String
     var tools: [FunctionDefinition]?
     let openAI: OpenAI
@@ -351,14 +351,14 @@ let OpenAITrans2Chinese = OpenAIPrompt(prompt:"你是一位精通简体中文的
 
 let OpenAITrans2English = OpenAIPrompt(prompt:"You are a professional translator proficient in English. Translate the following content into English. Rule: reply with the translated content directly. The content is：{selected.text}")
 
-internal var audioPlayer: AVAudioPlayer?
+nonisolated(unsafe) internal var audioPlayer: AVAudioPlayer?
 
 private struct VoiceData {
     var data: Data
     var lastAccessTime: Date
 }
 
-private var voiceDataCache = [Int: VoiceData]()
+nonisolated(unsafe) private var voiceDataCache = [Int: VoiceData]()
 
 // TODO: regular cleaning
 private func clearExpiredVoiceData() {
@@ -395,7 +395,7 @@ func openAITTS(_ text: String) async {
     }
 }
 
-func openAITTS2(_ text: String) async -> Data? {
+ func openAITTS2(_ text: String) async -> Data? {
     clearExpiredVoiceData()
     if let data = voiceDataCache[text.hash] {
         NSLog("cached tts")

@@ -37,9 +37,13 @@ struct MessageView: View {
                                 .onAppear(){
                                     animationTimer?.invalidate() // Invalidate any existing timer
                                     animationTimer = Timer.scheduledTimer(withTimeInterval: 0.02, repeats: true) { _ in
-                                        rotation += 5
-                                        if rotation >= 360 {
-                                            rotation -= 360
+                                        Task {
+                                            await MainActor.run {
+                                                rotation += 5
+                                                if rotation >= 360 {
+                                                    rotation -= 360
+                                                }
+                                            }
                                         }
                                     }
                                 }.onDisappear(){

@@ -11,7 +11,7 @@ import Cocoa
 import SwiftUI
 import Defaults
 
-class PersistenceController {
+class PersistenceController: @unchecked Sendable {
     static let shared = PersistenceController()
 
     let container: NSPersistentContainer

@@ -7,7 +7,7 @@
 
 import Foundation
 
-class MessageViewModel: ObservableObject {
+class MessageViewModel: ObservableObject, @unchecked Sendable {
     @Published var messages: [ResponseMessage] = []
     var chatService: AIChatService
 

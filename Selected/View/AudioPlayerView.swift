@@ -107,7 +107,7 @@ struct AudioPlayerView: View {
 
 import AVFoundation
 
-class AudioPlayer: ObservableObject {
+class AudioPlayer: ObservableObject, @unchecked Sendable {
     private var player: AVAudioPlayer?
     @Published var isPlaying: Bool = false
     @Published var currentTime: TimeInterval = 0.0

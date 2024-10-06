@@ -25,14 +25,14 @@ struct ShortcutRecorderView: NSViewRepresentable {
         Coordinator(self)
     }
     
-    class Coordinator: NSObject, RecorderControlDelegate {
+    class Coordinator: NSObject, @preconcurrency RecorderControlDelegate {
         var parent: ShortcutRecorderView
         
         init(_ recorderWrapper: ShortcutRecorderView) {
             self.parent = recorderWrapper
         }
         
-        func shortcutRecorderDidEndRecording(_ recorder: RecorderControl) {
+        @MainActor func shortcutRecorderDidEndRecording(_ recorder: RecorderControl) {
             if let objectValue = recorder.objectValue {
                 parent.shortcut = objectValue
             }

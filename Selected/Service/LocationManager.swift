@@ -9,7 +9,7 @@ import Foundation
 import CoreLocation
 
 
-class LocationManager: NSObject, CLLocationManagerDelegate {
+class LocationManager: NSObject, CLLocationManagerDelegate, @unchecked Sendable {
     static let shared = LocationManager()
 
 
@@ -34,7 +34,7 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
         DispatchQueue.main.async {
             self.location = location
         }
-        var p : String? = nil
+
         geocoder.reverseGeocodeLocation(location) {
             placemarks, error in
             if let err = error {
@@ -42,6 +42,7 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
                 return
             } else if let placemarks = placemarks {
                 if let placemark = placemarks.first {
+                    var p : String? = nil
                     p = "\(placemark.name!), \(placemark.locality!), \(placemark.administrativeArea!), \(placemark.country!)"
                     DispatchQueue.main.async {
                         self.place = p

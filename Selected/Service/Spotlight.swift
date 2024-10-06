@@ -12,7 +12,7 @@ import SwiftUI
 import HotKey
 import Defaults
 
-class SpotlightHotKeyManager {
+class SpotlightHotKeyManager: @unchecked Sendable {
     static let shared = SpotlightHotKeyManager()
 
     private var hotkey: HotKey?
@@ -21,7 +21,9 @@ class SpotlightHotKeyManager {
         NSEvent.addGlobalMonitorForEvents(matching:
                                             [.leftMouseDown, .rightMouseDown, .otherMouseDown]
         ) { (event) in
-            _ = SpotlightWindowManager.shared.closeWindow()
+            Task {
+                _ = await SpotlightWindowManager.shared.closeWindow()
+            }
         }
     }
 
@@ -31,7 +33,9 @@ class SpotlightHotKeyManager {
         }
         hotkey = HotKey(key: .init(carbonKeyCode: Defaults[.spotlightShortcut].carbonKeyCode)!, modifiers:  Defaults[.spotlightShortcut].modifierFlags)
         hotkey?.keyDownHandler = {
-            SpotlightWindowManager.shared.createWindow()
+            Task {
+                await SpotlightWindowManager.shared.createWindow()
+            }
         }
     }
 
@@ -44,13 +48,13 @@ class SpotlightHotKeyManager {
 
 // MARK: - window
 
-class SpotlightWindowManager {
+class SpotlightWindowManager: @unchecked Sendable {
     static let shared =  SpotlightWindowManager()
 
 
     private var windowCtr: WindowController?
 
-    fileprivate func createWindow() {
+    @MainActor fileprivate func createWindow() {
         windowCtr?.close()
         let view = SpotlightView()
         let window = WindowController(rootView: AnyView(view))
@@ -63,7 +67,7 @@ class SpotlightWindowManager {
         return
     }
 
-    fileprivate func closeWindow() -> Bool {
+    @MainActor fileprivate func closeWindow() -> Bool {
         guard let windowCtr = windowCtr else {
             return true
         }
@@ -77,11 +81,11 @@ class SpotlightWindowManager {
         return closed
     }
 
-    func resignKey(){
+    @MainActor func resignKey(){
         windowCtr?.window?.resignKey()
     }
 
-    func forceCloseWindow() {
+    @MainActor func forceCloseWindow() {
         guard let windowCtr = windowCtr else {
             return
         }
@@ -153,16 +157,16 @@ private class WindowController: NSWindowController, NSWindowDelegate {
 }
 
 
-private class WindowPositionManager {
+private class WindowPositionManager: @unchecked Sendable {
     static let shared = WindowPositionManager()
     let key = "SpotlightWindowPosition"
 
-    func storePosition(of window: NSWindow) {
+    @MainActor func storePosition(of window: NSWindow) {
         let frameString = NSStringFromRect(window.frame)
         UserDefaults.standard.set(frameString, forKey: key)
     }
 
-    func restorePosition(for window: NSWindow) -> Bool {
+    @MainActor func restorePosition(for window: NSWindow) -> Bool {
         if let frameString = UserDefaults.standard.string(forKey: key) {
             let frame = NSRectFromString(frameString)
             window.setFrame(frame, display: true)

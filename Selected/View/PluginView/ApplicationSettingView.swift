@@ -229,7 +229,7 @@ struct OnePicker: View {
     }
 }
 
-private func getAllActionsExcept(_ actions: [ActionID]) -> [PerformAction] {
+@MainActor private func getAllActionsExcept(_ actions: [ActionID]) -> [PerformAction] {
     let allActions = GetAllActions()
     var ret = [PerformAction]()
     for action in allActions {

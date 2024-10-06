@@ -90,7 +90,7 @@ struct ChatTextView: View {
     }
 }
 
-struct ChatInputView: View {
+@MainActor struct ChatInputView: View {
     var viewModel: MessageViewModel
     @State private var newText: String = ""
     @State private var task: Task<Void, Never>? = nil
@@ -139,9 +139,11 @@ struct ChatInputView: View {
     func submitMessage(){
         let message = newText
         newText = ""
-        DispatchQueue.global(qos: .background).async {
-            task = Task {
-                await viewModel.submit(message: message)
+        Task{
+            await MainActor.run {
+                task = Task {
+                    await viewModel.submit(message: message)
+                }
             }
         }
     }
