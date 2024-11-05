@@ -95,7 +95,7 @@ struct SelectedApp: App {
             MenuItemView()
         } label: {
             Label {
-                Text("Selected")
+                Text("Selected-Dev")
             } icon: {
                 Image(systemName: "pencil.and.scribble")
                     .resizable()
@@ -206,16 +206,14 @@ struct EventState {
                 lastMouseEventType = event.type
             }
         }
+        // TODO: 目前禁用 cmd + A 快捷键，找到问题并解决后重新启用
         if event.type == .leftMouseUp {
             let selected =  lastMouseEventType == .leftMouseDragged ||
             ((lastMouseEventType == .leftMouseUp) && (event.timestamp - lastLeftMouseUPTime < 0.5))
             lastLeftMouseUPTime = event.timestamp
             return selected
         } else if event.type == .keyDown {
-            if event.keyCode == Keycode.a {
-                return event.modifierFlags.contains(.command) &&
-                !event.modifierFlags.contains(.shift) && !event.modifierFlags.contains(.control)
-            } else if keyCodeArrows.contains( event.keyCode) {
+            if keyCodeArrows.contains( event.keyCode) {
                 let keyMask: NSEvent.ModifierFlags =  [.command, .shift]
                 return event.modifierFlags.intersection(keyMask) == keyMask
             }
