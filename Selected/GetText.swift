@@ -9,6 +9,7 @@ import Cocoa
 import SwiftUI
 import OpenAI
 import Defaults
+import Accessibility
 
 struct SelectedTextContext {
     var Text: String = ""
@@ -103,6 +104,7 @@ func getSelectedText() -> SelectedTextContext? {
         selectedText = getSelectedTextByAX(bundleID: bundleID)
     }
     
+    // FIXME: 这里模拟cmd+c会导致部分ide下选中的内容被移除选中，体验糟糕
     if selectedText.isEmpty && SupportedCmdCAppList.contains(bundleID) {
         NSLog("getSelectedTextBySimulateCommandC")
         selectedText = getSelectedTextBySimulateCommandC()
@@ -153,8 +155,7 @@ extension StringProtocol {
     }
 }
 
-let SupportedCmdCAppList: [String] = ["com.microsoft.VSCode",
-                                      "com.microsoft.onenote.mac",
+let SupportedCmdCAppList: [String] = ["com.microsoft.onenote.mac",
                                       "com.microsoft.Word",
                                       "com.microsoft.Powerpoint",
                                       "dev.zed.Zed",
@@ -171,6 +172,7 @@ let copyableAppList: [String] = ["dev.warp.Warp-Stable",
                                  "com.microsoft.Powerpoint",
                                  "dev.zed.Zed"]
 
+// 基于临时剪贴板，模拟复制，从而获取选中的文本
 func getSelectedTextBySimulateCommandC() -> String {
     let pboard =  NSPasteboard.general
     let lastCopyText = pboard.string(forType: .string)
@@ -192,6 +194,7 @@ func getSelectedTextBySimulateCommandC() -> String {
     
     let selectText = pboard.string(forType: .string)
     NSLog("changeCount a \(pboard.changeCount)")
+    
     pboard.clearContents()
     NSLog("last content: \(String(describing: lastCopyText))")
     pboard.setString(lastCopyText ?? "", forType: .string)

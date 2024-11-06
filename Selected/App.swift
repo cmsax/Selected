@@ -154,6 +154,9 @@ func monitorMouseMove() {
             if eventState.isSelected(event: event) {
                 if let ctx = getSelectedText() {
                     print("SelectedContext %@", ctx)
+                    if ctx.BundleID == "com.microsoft.VSCode" {
+                        return
+                    }
                     if !ctx.Text.isEmpty {
                         updatedSelectedText = true
                         if lastSelectedText != ctx.Text {
